@@ -1,0 +1,81 @@
+1) Створюємо нову таблицю валют і заповнюємо її. Прив*язуємо до основної, задаючи дефолтні значення гривні. Потім рандомом розкидую значення по вже існуючим записам;
+CREATE TABLE test.currency (
+  currency_id int(11) unsigned NOT NULL AUTO_INCREMENT,
+  name varchar(45) NOT NULL,
+  PRIMARY KEY (currency_id),
+  UNIQUE KEY name_CURRENCY (name)
+) 
+ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO test.currency VALUES (1, 'грн'), (2, 'євро'), (3, 'дол'), (4, 'руб');
+
+ALTER TABLE test.ria_auto 
+ADD COLUMN currency_id int(10) unsigned NOT NULL default 1,
+ADD CONSTRAINT FOREIGN KEY (currency_id) REFERENCES currency (currency_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+UPDATE test.ria_auto
+SET currency_id=FLOOR(RAND()*(4-1)+1)
+WHERE currency_id=1;
+
+2)Всі дії аналогічні першому завданню;
+CREATE TABLE test.ria_city (
+  city_id int(11) unsigned NOT NULL AUTO_INCREMENT,
+  name varchar(45) NOT NULL,
+  PRIMARY KEY (city_id),
+  UNIQUE KEY name_CITY (name)
+) 
+ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO test.ria_city VALUES (1, 'Вінниця'), (2, 'Хмельницький'), (3, 'Житомир'), (4, 'Київ'),(5,'Львів'),(6,'Одеса'),(7,'Харків');
+
+ALTER TABLE test.ria_auto 
+ADD COLUMN city_id int(10) unsigned NOT NULL default 1,
+ADD CONSTRAINT FOREIGN KEY (city_id) REFERENCES ria_city (city_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+UPDATE test.ria_auto
+SET city_id=FLOOR(RAND()*(7-1)+1)
+WHERE city_id=1;
+
+3) Дії ті самі, крім різниці варіантів. Припустимо всі автомобілі будуть легковими;
+CREATE TABLE test.ria_type (
+  type_id int(11) unsigned NOT NULL AUTO_INCREMENT,
+  name varchar(45) NOT NULL,
+  PRIMARY KEY (type_id),
+  UNIQUE KEY name_TYPE (name)
+) 
+ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO test.ria_type VALUES (1, 'Легкові'), (2, 'Вантажівки'), (3, 'Мото'), (4, 'Причепи'),(5,'Спецтехніка'),(6,'Автобуси'),(7,'Водний транспорт');
+
+ALTER TABLE test.ria_auto 
+ADD COLUMN type_id int(10) unsigned NOT NULL default 1,
+ADD CONSTRAINT FOREIGN KEY (type_id) REFERENCES ria_type (type_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+4) Для подальших запитів валюту також усюди пропишемо одну і ту ж, бо записів в основній таблиці не так багато і очевидно вже прописана ціна була якраз в гривні. Далі формуємо запит, з*єднуючи потрібні таблиці і вибравши потрібне місто;
+UPDATE test.ria_auto
+SET currency_id=1
+WHERE currency_id=2 or currency_id=3 or currency_id=4 ;
+
+SELECT ma.name as marka, mo.name as model, version, price, cu.name as currency,ci.name as city, ty.name as type, u.name as 'user name'
+FROM ria_auto as a
+INNER JOIN ria_marks as ma using(mark_id)
+inner join ria_models as mo using(model_id)
+inner join ria_users as u using(user_id)
+inner join currency as cu using(currency_id)
+inner join ria_city as ci using(city_id)
+inner join ria_type as ty using(type_id)
+where city_id=1;
+
+5)Підтягуємо таблицю міст і рахуємо кількість по відгрупованим айдішкам;
+SELECT count(*) as Count, ci.name as City,
+FROM ria_auto
+inner join ria_city as ci using(city_id)
+group by city_id;
+
+6)Об*єднуємо необхідні таблиці, групуємо по моделям і містам. Для зручності сортуєм по моделям. Виводимо кількість авто і середню ціну
+SELECT count(*) as Count, mo.name as Model, ci.name as City, avg(price) as 'Avarage Price'
+FROM ria_auto
+inner join ria_models as mo using(model_id)
+inner join ria_city as ci using(city_id)
+group by model_id, city_id
+order by model_id;
